@@ -1003,20 +1003,28 @@ async function tailFile(filename: string): Promise<void> {
         
         // Track user messages
         if (message.role === "user" && Array.isArray(message.content)) {
-          // Find actual user text (skip metadata blocks)
-          let textItem = message.content.find((c: { type?: string; text?: string }) => {
-            if (c.type !== "text") return false;
-            const t = c.text || "";
-            // Skip metadata/system blocks
-            if (t.startsWith("Conversation info (untrusted metadata)")) return false;
-            if (t.startsWith("<system-reminder>")) return false;
-            return true;
-          });
-          // Fallback to first text if no non-metadata found
-          if (!textItem) {
-            textItem = message.content.find((c: { type?: string }) => c.type === "text");
+          const textItem = message.content.find((c: { type?: string }) => c.type === "text");
+          let text = textItem?.text || "";
+          
+          // Extract actual user message from metadata-wrapped text
+          // Pattern: "[Image] User text: <actual message>" or "User text: <actual message>"
+          const userTextMatch = text.match(/\[Image\]\s*User text:\s*([\s\S]+)/);
+          if (userTextMatch) {
+            text = userTextMatch[1].trim();
+          } else {
+            // Fallback: look for text after last ``` block
+            const lastBlockMatch = text.match(/```\s*([\s\S]+?)$/);
+            if (lastBlockMatch && !lastBlockMatch[1].includes("metadata")) {
+              text = lastBlockMatch[1].trim();
+            } else if (text.includes("Conversation info (untrusted metadata)")) {
+              // Extract text after Sender block
+              const senderBlockMatch = text.match(/Sender \(untrusted metadata\):[\s\S]*?```\s*\n*\s*([\s\S]+?)(?:\n*\[Image\]|$)/);
+              if (senderBlockMatch) {
+                text = senderBlockMatch[1].trim();
+              }
+            }
           }
-          const text = textItem?.text || "";
+          
           const sender = extractSenderName(message.content);
           const imageMeta = extractImageMetadata(message.content);
           const hasImage = imageMeta.length > 0;
