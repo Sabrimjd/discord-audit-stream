@@ -1,5 +1,7 @@
 # Discord Audit Stream
 
+![Discord Audit Stream Example](pic/screenshot.webp)
+
 A daemon that monitors OpenClaw session files and sends **all events** to a Discord channel via webhook.
 
 ## Features
