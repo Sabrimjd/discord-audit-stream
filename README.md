@@ -53,14 +53,7 @@ git clone https://github.com/Sabrimjd/discord-audit-stream.git
 cd discord-audit-stream
 ```
 
-### Option 2: ClawHub (Coming Soon)
-
-```bash
-clawhub install discord-audit-stream
-openclaw hooks enable discord-audit-stream
-```
-
-### Option 3: Manual Install
+### Option 2: Manual Install
 
 ```bash
 mkdir -p ~/.openclaw/hooks/discord-audit-stream
