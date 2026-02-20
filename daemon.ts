@@ -539,7 +539,14 @@ function formatEvent(event: PendingEvent): string {
       const hasImage = data.hasImage === true;
       const imageMeta = data.imageMeta as string[] | undefined;
       
-      let msg = `${time} ${icon} ${sender}: "${truncateText(preview, 60)}"`;
+      // Skip metadata-only messages (just "...." or empty after extraction)
+      if (!preview || preview.trim() === "...." || preview.trim() === "") {
+        return null;
+      }
+      
+      // Code block format with 3000 char limit
+      const truncatedPreview = preview.length > 3000 ? preview.slice(0, 3000) + "..." : preview;
+      let msg = `${time} ${icon} ${sender}:\n\`\`\`\n${truncatedPreview}\n\`\`\``;
       if (hasImage) {
         msg += ` [🖼️ image`;
         if (imageMeta && imageMeta.length > 0) {
@@ -714,6 +721,7 @@ function buildMessage(groupKey: string, events: PendingEvent[]): string {
   
   for (const event of events) {
     const formatted = formatEvent(event);
+    if (!formatted) continue; // Skip null results (e.g., metadata-only messages)
     if (totalLen + formatted.length + 1 > MAX_MESSAGE_LENGTH - 50) {
       const remaining = events.length - lines.length + 1;
       if (remaining > 0) {
@@ -1006,22 +1014,26 @@ async function tailFile(filename: string): Promise<void> {
           const textItem = message.content.find((c: { type?: string }) => c.type === "text");
           let text = textItem?.text || "";
           
-          // Extract actual user message from metadata-wrapped text
-          // Pattern: "[Image] User text: <actual message>" or "User text: <actual message>"
+          // Extract actual user message from metadata-wrapped Discord messages
+          // Pattern 1: "[Image] User text: <actual message>"
           const userTextMatch = text.match(/\[Image\]\s*User text:\s*([\s\S]+)/);
           if (userTextMatch) {
             text = userTextMatch[1].trim();
-          } else {
-            // Fallback: look for text after last ``` block
-            const lastBlockMatch = text.match(/```\s*([\s\S]+?)$/);
-            if (lastBlockMatch && !lastBlockMatch[1].includes("metadata")) {
-              text = lastBlockMatch[1].trim();
-            } else if (text.includes("Conversation info (untrusted metadata)")) {
-              // Extract text after Sender block
-              const senderBlockMatch = text.match(/Sender \(untrusted metadata\):[\s\S]*?```\s*\n*\s*([\s\S]+?)(?:\n*\[Image\]|$)/);
-              if (senderBlockMatch) {
-                text = senderBlockMatch[1].trim();
+          } else if (text.includes("Conversation info (untrusted metadata)")) {
+            // Pattern 2: After all metadata blocks, get remaining text
+            // Find the last ``` and get text after it
+            const parts = text.split(/```/);
+            if (parts.length > 1) {
+              // Get last part after final ```
+              const lastPart = parts[parts.length - 1].trim();
+              // Skip if it's just metadata keywords or "...."
+              if (lastPart && !lastPart.includes("metadata") && lastPart !== "...." && lastPart.length > 5) {
+                text = lastPart;
+              } else {
+                text = ""; // No actual user message found
               }
+            } else {
+              text = "";
             }
           }
           
