@@ -1,5 +1,9 @@
 # Discord Audit Stream
 
+[![npm version](https://badge.fury.io/js/discord-audit-stream.svg)](https://badge.fury.io/js/discord-audit-stream)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/release/Sabrimjd/discord-audit-stream.svg)](https://github.com/Sabrimjd/discord-audit-stream/releases)
+
 ![Discord Audit Stream Example](pic/screenshot.webp)
 
 A daemon that monitors OpenClaw session files and sends **all events** to a Discord channel via webhook.
