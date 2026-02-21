@@ -62,13 +62,13 @@ function stopDaemon(logger: OpenClawPluginApi["logger"]) {
 }
 
 const plugin = {
-  id: "discord-audit-stream",
+  id: "openclaw-discord-audit-stream",
   name: "Discord Audit Stream",
   description: "Monitors OpenClaw session files and sends all events to a Discord channel",
   configSchema: emptyPluginConfigSchema(),
   register(api: OpenClawPluginApi) {
     api.registerService({
-      id: "discord-audit-stream-daemon",
+      id: "openclaw-discord-audit-stream-daemon",
       start: () => startDaemon(api.logger),
       stop: () => stopDaemon(api.logger),
     });
