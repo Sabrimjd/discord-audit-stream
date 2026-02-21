@@ -1,6 +1,6 @@
-# Discord Audit Stream
+# OpenClaw Discord Audit Stream
 
-[![npm version](https://badge.fury.io/js/discord-audit-stream.svg)](https://badge.fury.io/js/discord-audit-stream)
+[![npm version](https://badge.fury.io/js/openclaw-discord-audit-stream.svg)](https://badge.fury.io/js/openclaw-discord-audit-stream)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/Sabrimjd/discord-audit-stream.svg)](https://github.com/Sabrimjd/discord-audit-stream/releases)
 
@@ -54,7 +54,7 @@ A daemon that monitors OpenClaw session files and sends **all events** to a Disc
 ### Option 1: Install as Plugin (Recommended)
 
 ```bash
-openclaw plugins install @openclaw/discord-audit-stream
+openclaw plugins install openclaw-discord-audit-stream
 ```
 
 Then configure in your OpenClaw config:
@@ -63,7 +63,7 @@ Then configure in your OpenClaw config:
 {
   plugins: {
     entries: {
-      "discord-audit-stream": {
+      "openclaw-discord-audit-stream": {
         enabled: true,
         config: {
           webhookUrl: "https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN",
@@ -94,7 +94,7 @@ Then enable in config:
 {
   plugins: {
     entries: {
-      "discord-audit-stream": { enabled: true }
+      "openclaw-discord-audit-stream": { enabled: true }
     }
   }
 }
@@ -146,7 +146,7 @@ The daemon starts automatically via OpenClaw's hook system on `gateway:startup`.
 ### Manual Start
 
 ```bash
-cd ~/.openclaw/extensions/discord-audit-stream
+cd ~/.openclaw/extensions/openclaw-discord-audit-stream
 node src/daemon.ts &
 ```
 

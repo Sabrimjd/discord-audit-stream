@@ -1,5 +1,5 @@
 {
-  "name": "discord-audit-stream",
+  "name": "openclaw-discord-audit-stream",
   "version": "1.0.3",
   "description": "Monitors OpenClaw session files and sends all events to a Discord channel via webhook",
   "main": "index.ts",
