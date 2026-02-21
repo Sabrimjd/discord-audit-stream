@@ -1,5 +1,19 @@
 # OpenClaw Discord Audit Stream
 
+> ⚠️ **DEPRECATED**: This package has been superseded by **[openclaw-session-audit](https://github.com/Sabrimjd/openclaw-session-audit)**.
+> 
+> The new package supports **all OpenClaw channels** (Discord, Telegram, Slack, etc.) with a simpler config.
+> 
+> **Migration:**
+> ```bash
+> openclaw plugins uninstall openclaw-discord-audit-stream
+> openclaw plugins install openclaw-session-audit
+> ```
+> 
+> See [openclaw-session-audit](https://github.com/Sabrimjd/openclaw-session-audit) for details.
+
+---
+
 [![npm version](https://badge.fury.io/js/openclaw-discord-audit-stream.svg)](https://badge.fury.io/js/openclaw-discord-audit-stream)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/Sabrimjd/discord-audit-stream.svg)](https://github.com/Sabrimjd/discord-audit-stream/releases)
