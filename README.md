@@ -4,60 +4,35 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/Sabrimjd/discord-audit-stream.svg)](https://github.com/Sabrimjd/discord-audit-stream/releases)
 
-![Discord Audit Stream Example](pic/screenshot.webp)
+![Discord Audit Stream Example](pic/screenshot.png)
 
-A daemon that monitors OpenClaw session files and sends **all events** to a Discord channel via webhook.
-
-## Features
-
-### Comprehensive Event Tracking
-- **Tool Calls** - All tool invocations with arguments and durations
-- **User Messages** - Sender name + truncated preview
-- **Response Completion** - Token count when agent finishes
-- **Thinking/Reasoning** - Truncated preview of agent's thought process
-- **Prompt Errors** - Aborted requests, timeouts, API errors
-- **Model Changes** - Model switches mid-session
-- **Context Compaction** - Token count + summary when context compressed
-- **Images** - MIME type and source metadata
-- **Thinking Level** - off/low/medium/high changes
-
-### Rich Formatting
-- **Icons** - 40+ tool icons, event-specific icons
-- **Timestamps** - HH:MM:SS.ms precision
-- **Durations** - Milliseconds, seconds, or minutes
-- **Diff Stats** - Lines and characters added/removed
-- **Session Metadata** - Project, model, tokens, provider, surface
-
-### Smart Batching
-- Groups events within configurable time windows
-- Rate limiting to respect Discord limits
-- Auto-flush when batch size exceeded
-
-### Robustness
-- Webhook primary with openclaw CLI fallback
-- State persistence across restarts
-- Handles large session files (up to 10MB)
-- Thread and subagent support
-
-## Advantages Over Built-in Logging
-
-| Feature | Built-in Logger | Discord Audit Stream |
-|---------|-----------------|---------------------|
-| Remote visibility | ❌ Local files only | ✅ Real-time Discord |
-| Rich formatting | ❌ Plain text | ✅ Emoji, timestamps, diffs |
-| Team collaboration | ❌ Single machine | ✅ Shared Discord channel |
-| Centralized monitoring | ❌ Scattered logs | ✅ One channel for all |
-| Event types | ❌ Limited | ✅ 15+ event types |
+Monitor all OpenClaw session events and stream them to a Discord channel in real-time.
 
 ## Installation
-
-### Option 1: Install as Plugin (Recommended)
 
 ```bash
 openclaw plugins install openclaw-discord-audit-stream
 ```
 
-Then configure in your OpenClaw config:
+## Configuration
+
+### Step 1: Create Discord Webhook
+
+1. Go to your Discord server settings
+2. Navigate to **Integrations** → **Webhooks**
+3. Click **New Webhook**
+4. Name it (e.g., "OpenClaw Audit")
+5. Select the channel where you want audit logs
+6. Click **Copy Webhook URL**
+
+### Step 2: Get Channel ID
+
+1. Enable **Developer Mode** in Discord (User Settings → Advanced → Developer Mode)
+2. Right-click the channel → **Copy ID**
+
+### Step 3: Configure Plugin
+
+Add to your OpenClaw config (`~/.openclaw/config.json5`):
 
 ```json5
 {
@@ -66,13 +41,8 @@ Then configure in your OpenClaw config:
       "openclaw-discord-audit-stream": {
         enabled: true,
         config: {
-          webhookUrl: "https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN",
-          fallbackChannelId: "YOUR_CHANNEL_ID",
-          rateLimitMs: 2000,
-          batchWindowMs: 8000,
-          agentEmojis: {
-            "clawd": "🦞"
-          }
+          webhookUrl: "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN",
+          fallbackChannelId: "YOUR_CHANNEL_ID"
         }
       }
     }
@@ -80,220 +50,94 @@ Then configure in your OpenClaw config:
 }
 ```
 
-### Option 2: Manual Install (Legacy)
+### Configuration Options
+
+| Option | Required | Description | Default |
+|--------|----------|-------------|---------|
+| `webhookUrl` | ✅ Yes | Discord webhook URL | - |
+| `fallbackChannelId` | ⚠️ Recommended | Fallback channel ID for openclaw CLI | - |
+| `rateLimitMs` | No | Rate limit between messages (ms) | 2000 |
+| `batchWindowMs` | No | Batch window for grouping events (ms) | 8000 |
+| `maxBatchSize` | No | Max events per batch | 15 |
+| `agentEmojis` | No | Emoji mappings for agents | `{ clawd: "🦞" }` |
+
+### Environment Variables (Alternative)
+
+You can also use environment variables instead of config:
 
 ```bash
-cd ~/.openclaw/extensions
-git clone https://github.com/Sabrimjd/discord-audit-stream.git
-cd discord-audit-stream
+export DISCORD_AUDIT_WEBHOOK_URL="https://discord.com/api/webhooks/..."
+export DISCORD_AUDIT_CHANNEL_ID="123456789"
+export DISCORD_AUDIT_RATE_LIMIT_MS="2000"
+export DISCORD_AUDIT_BATCH_WINDOW_MS="8000"
 ```
 
-Then enable in config:
+**Priority**: Environment variables > config.json > defaults
+
+## Features
+
+### Event Tracking
+- **Tool Calls** - exec, edit, write, read, etc. with durations
+- **User Messages** - Sender name + preview
+- **Response Completion** - Token counts
+- **Thinking/Reasoning** - Agent thoughts
+- **Errors** - Timeouts, API errors, aborts
+- **Model Changes** - Mid-session switches
+- **Context Compaction** - Token summaries
+- **Images** - MIME type metadata
+
+### Smart Formatting
+- 40+ event-specific icons
+- Millisecond timestamps
+- Diff statistics (lines/chars added/removed)
+- Session metadata (project, model, tokens)
+
+### Performance
+- Smart batching (groups events in time windows)
+- Rate limiting (respects Discord limits)
+- Handles large files (up to 10MB)
+- State persistence across restarts
+
+## Management
+
+### Auto-start
+The daemon starts automatically when OpenClaw gateway starts.
+
+### Manual Control
+
+```bash
+# Start
+node ~/.openclaw/extensions/openclaw-discord-audit-stream/src/daemon.ts &
+
+# Stop
+kill $(cat ~/.openclaw/extensions/openclaw-discord-audit-stream/state/daemon.pid)
+
+# Restart
+kill $(cat ~/.openclaw/extensions/openclaw-discord-audit-stream/state/daemon.pid) 2>/dev/null
+sleep 1
+node ~/.openclaw/extensions/openclaw-discord-audit-stream/src/daemon.ts &
+```
+
+## Customization
+
+### Agent Emojis
+
+Add custom emojis for your agents:
 
 ```json5
 {
-  plugins: {
-    entries: {
-      "openclaw-discord-audit-stream": { enabled: true }
-    }
-  }
-}
-```
-
-## Configuration
-
-### Quick Setup
-
-1. **Copy example config:**
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Edit config.json** with your webhook URL:
-   ```json
-   {
-     "webhookUrl": "https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN",
-     "fallbackChannelId": "YOUR_CHANNEL_ID",
-     "agentEmojis": {
-       "clawd": "🦞",
-       "myagent": "🐉"
-     }
-   }
-   ```
-
-### Configuration Options
-
-| Option | Config File | Env Variable | Default |
-|--------|-------------|--------------|---------|
-| Webhook URL | `webhookUrl` | `DISCORD_AUDIT_WEBHOOK_URL` | (required) |
-| Fallback Channel | `fallbackChannelId` | `DISCORD_AUDIT_CHANNEL_ID` | - |
-| Rate Limit (ms) | `rateLimitMs` | `DISCORD_AUDIT_RATE_LIMIT_MS` | 2000 |
-| Batch Window (ms) | `batchWindowMs` | `DISCORD_AUDIT_BATCH_WINDOW_MS` | 8000 |
-| Max Batch Size | `maxBatchSize` | - | 15 |
-| Max Message Length | `maxMessageLength` | - | 1700 |
-| Max File Size | `maxFileSize` | - | 10000000 |
-| Agent Emojis | `agentEmojis` | - | { clawd: "🦞" } |
-
-### Priority
-**Environment variables > config.json > defaults**
-
-## Running the Daemon
-
-### Auto-start (Recommended)
-
-The daemon starts automatically via OpenClaw's hook system on `gateway:startup`.
-
-### Manual Start
-
-```bash
-cd ~/.openclaw/extensions/openclaw-discord-audit-stream
-node src/daemon.ts &
-```
-
-### Stop Daemon
-
-```bash
-kill $(cat state/daemon.pid)
-```
-
-### Restart Daemon
-
-```bash
-kill $(cat state/daemon.pid) 2>/dev/null; sleep 1; node src/daemon.ts &
-```
-
-## Message Format
-
-### Example Output
-
-```
-🦞[clawd] (glm-4.7) [subagent] [thread:613] 👤agent:main:main:thread:613 | 📁/home/sab/clawd | 📊62k/262k (24%) | 🧠high | 🖥️discord | 🔌discord | ⏰21:28 | 🔗14744525
-
-21:32:10.54 💬 Loky: "Hello pop a GLM-5 subagent and do a check..."
-21:32:10.55 💭 Thinking: "Let me analyze the request and spawn..."
-21:32:10.56 ⚡ exec (1.5s):
-```bash
-opencode run --model zai/glm-5 "Review the Discord hook..."
-```
-21:32:15.00 ✏️ edit (27ms) (+3/-2 lines, +156/-89 chars): `/home/sab/projects/app/src/page.tsx`
-21:32:20.00 ✅ Response completed (234 tokens)
-21:32:25.00 🖼️ Image received: image/png (base64:iVBORw0KGgo...)
-21:32:30.00 ❌ Prompt error (glm-4.7): aborted
-21:32:35.00 🔄 Model changed: qwen3-coder-next → glm-5
-21:32:40.00 🗜️ Context compacted (258k tokens): Summary: Goal was to fix...
-21:32:45.00 🧠 Thinking level: high
-```
-
-### Header Breakdown
-
-| Position | Field | Example |
-|----------|-------|---------|
-| 1 | Agent emoji | 🦞 |
-| 2 | Project name | [clawd] |
-| 3 | Model ID | (glm-4.7) |
-| 4 | Subagent tag | [subagent] |
-| 5 | Thread tag | [thread:613] |
-| 6 | Session type + key | 👤agent:main:main:thread:613 |
-| 7 | Working directory | 📁/home/sab/clawd |
-| 8 | Token usage | 📊62k/262k (24%) |
-| 9 | Thinking level | 🧠high |
-| 10 | Surface | 🖥️discord |
-| 11 | Provider | 🔌discord |
-| 12 | Last update | ⏰21:28 |
-| 13 | Group ID | 🔗14744525 |
-
-## Session Types
-
-| Type | Icon | Key Format |
-|------|------|------------|
-| Direct | 👤 | `agent:main:main` |
-| Channel | 👥 | `agent:main:discord:channel:123...` |
-| Thread | 👤 + `[thread:N]` | `agent:main:main:thread:613` |
-| Telegram | 👥 | `agent:main:telegram:group:-123` |
-| Subagent | `[subagent]` | `agent:main:subagent:abc...` |
-
-## Event Icons
-
-| Icon | Event |
-|------|-------|
-| ⚡ | exec |
-| ✏️ | edit |
-| 📝 | write |
-| 📖 | read |
-| 🔍 | glob, grep |
-| 🌐 | webfetch |
-| ⚙️ | process |
-| 🚀 | sessions_spawn |
-| 📤 | delegate_task |
-| 💬 | User message |
-| ✅ | Response completed |
-| 💭 | Thinking |
-| ❌ | Prompt error |
-| 🔄 | Model change |
-| 🗜️ | Context compaction |
-| 🖼️ | Image received |
-| 🧠 | Thinking level |
-
-## Files
-
-```
-discord-audit-stream/
-├── openclaw.plugin.json   # Plugin manifest
-├── index.ts               # Plugin entry point
-├── package.json           # Package metadata
-├── hooks/                 # Hooks directory
-│   ├── HOOK.md           # Hook metadata for OpenClaw
-│   └── handler.ts        # Hook handler (starts daemon)
-├── src/
-│   └── daemon.ts         # Main daemon code
-├── config.json           # Configuration file
-├── .env.example          # Environment variable template
-├── .gitignore            # Git ignore rules
-├── LICENSE               # MIT License
-├── README.md             # This file
-└── state/                # Runtime state
-    ├── state.json        # Offsets & seen IDs
-    └── daemon.pid        # Current daemon PID
-```
-
-## State Structure
-
-```json
-{
-  "offsets": {
-    "session-id.jsonl": 12345
-  },
-  "seenIds": ["call_abc123", "call_def456"],
-  "lastSend": 1739987200000
-}
-```
-
-## How It Works
-
-1. **Watch** - Uses Node.js `fs.watch` to monitor session files
-2. **Parse** - Reads new lines from offset, parses JSON
-3. **Track** - Records all events with timestamps
-4. **Batch** - Waits for configurable window before sending
-5. **Send** - POSTs to Discord webhook (with fallback)
-
-## Adding Agent Emojis
-
-Edit `config.json`:
-
-```json
-{
-  "agentEmojis": {
+  agentEmojis: {
     "clawd": "🦞",
-    "myagent": "🐉",
     "worker": "🔨",
-    "planner": "📋"
+    "planner": "📋",
+    "myagent": "🐉"
   }
 }
 ```
 
-## Filtering Events
+### Event Filtering
 
-To filter specific event types, edit `daemon.ts` and modify the `tailFile` function:
+To filter specific events, edit `src/daemon.ts`:
 
 ```typescript
 // Only track destructive tools
@@ -306,16 +150,36 @@ if (!["user_message", "assistant_complete"].includes(event.type)) continue;
 ## Troubleshooting
 
 ### No messages appearing
-1. Check webhook URL is set in `config.json`
-2. Verify daemon is running: `cat state/daemon.pid`
+1. Verify webhook URL in config
+2. Check daemon is running: `cat state/daemon.pid`
 3. Check process: `ps aux | grep daemon.ts`
 
-### Session file too large
-- Increase `maxFileSize` in `config.json` (default: 10MB)
-
 ### Rate limited
-- Increase `rateLimitMs` in `config.json`
-- Check Discord webhook limits (5 requests/2 seconds)
+- Increase `rateLimitMs` (default: 2000ms)
+- Discord limit: 5 requests per 2 seconds
+
+### Session file too large
+- Increase `maxFileSize` in config (default: 10MB)
+
+## Event Icons
+
+| Icon | Event | Icon | Event |
+|------|-------|------|-------|
+| ⚡ | exec | ✏️ | edit |
+| 📝 | write | 📖 | read |
+| 🔍 | grep/glob | 🌐 | webfetch |
+| 💬 | User message | ✅ | Response completed |
+| 💭 | Thinking | ❌ | Error |
+| 🔄 | Model change | 🗜️ | Context compaction |
+| 🖼️ | Image | 🧠 | Thinking level |
+
+## How It Works
+
+1. **Watch** - Monitors OpenClaw session files via `fs.watch`
+2. **Parse** - Reads new JSON lines from offset
+3. **Track** - Records events with timestamps
+4. **Batch** - Groups events within time window
+5. **Send** - POSTs to Discord webhook
 
 ## License
 
@@ -327,3 +191,9 @@ MIT License - See [LICENSE](LICENSE)
 2. Create a feature branch
 3. Make your changes
 4. Submit a pull request
+
+## Support
+
+- **GitHub**: https://github.com/Sabrimjd/discord-audit-stream
+- **npm**: https://www.npmjs.com/package/openclaw-discord-audit-stream
+- **Issues**: https://github.com/Sabrimjd/discord-audit-stream/issues
